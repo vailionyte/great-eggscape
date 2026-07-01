@@ -302,19 +302,35 @@ export function Game() {
   const [score, setScore] = useState(0);
   const [highScore, setHighScore] = useState(0);
   const [gameOverKind, setGameOverKind] = useState<ObstacleKind>("pan");
-  const [muted, setMuted] = useState(false);
+  const [muted, setMuted] = useState(true);
   const [difficulty, setDifficulty] = useState<Difficulty>("easy");
   const [activeBuff, setActiveBuff] = useState<{ label: string; until: number; total: number } | null>(null);
   const [shieldReady, setShieldReady] = useState(false);
   const [milestone, setMilestone] = useState<string | null>(null);
 
   const phaseRef = useRef<Phase>("idle");
-  const mutedRef = useRef(false);
+  const mutedRef = useRef(true);
+  const unmutedByGestureRef = useRef(false);
   const holdingRef = useRef(false);
   const difficultyRef = useRef<Difficulty>("easy");
   useEffect(() => { phaseRef.current = phase; }, [phase]);
   useEffect(() => { mutedRef.current = muted; }, [muted]);
   useEffect(() => { difficultyRef.current = difficulty; }, [difficulty]);
+
+  useEffect(() => {
+    const onFirstGesture = () => {
+      if (unmutedByGestureRef.current) return;
+      unmutedByGestureRef.current = true;
+      audio.init();
+      setMuted(false);
+    };
+    window.addEventListener("pointerdown", onFirstGesture, { capture: true });
+    window.addEventListener("keydown", onFirstGesture, { capture: true });
+    return () => {
+      window.removeEventListener("pointerdown", onFirstGesture, { capture: true });
+      window.removeEventListener("keydown", onFirstGesture, { capture: true });
+    };
+  }, []);
 
   const stateRef = useRef({
     eggY: GROUND_Y, vy: 0, onGround: true,
@@ -1398,14 +1414,13 @@ export function Game() {
   const goImg = GAME_OVER_IMG[gameOverKind];
 
   return (
-    <div className="relative w-full max-w-[1280px] mx-auto">
-      <div ref={containerRef} data-phase={phase} className="relative rounded-3xl shadow-2xl border-4 border-amber-900/30 bg-amber-50">
+    <div className="relative h-full w-full">
+      <div ref={containerRef} data-phase={phase} className="relative h-full w-full bg-amber-50">
         <canvas
           ref={canvasRef}
           width={W}
           height={H}
-          className="block w-full h-auto cursor-pointer select-none touch-none rounded-3xl"
-          style={{ aspectRatio: `${W} / ${H}` }}
+          className="block h-full w-full cursor-pointer select-none touch-none"
         />
 
 
