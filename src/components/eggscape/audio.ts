@@ -7,7 +7,7 @@ type ObstacleKind = "pan" | "pot" | "whisk" | "spatula" | "toaster";
 class AudioManager {
   private ctx: AudioContext | null = null;
   private master: GainNode | null = null;
-  private muted = true;
+  private muted = false;
   private noiseBuffer: AudioBuffer | null = null;
 
   // Rolling loop nodes

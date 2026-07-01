@@ -137,15 +137,6 @@
     border-color: var(--color-border);
   }
 
-  html,
-  body,
-  #root {
-    width: 100vw;
-    height: 100vh;
-    margin: 0;
-    overflow: hidden;
-  }
-
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);

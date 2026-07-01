@@ -20,25 +20,6 @@ async function getServerEntry(): Promise<ServerEntry> {
 
 // h3 swallows in-handler throws into a normal 500 Response with body
 // {"unhandled":true,"message":"HTTPError"} — try/catch alone never fires for those.
-// Allow embedding in third-party iframes. Change "*" to "https://<expo-domain>" to restrict.
-const FRAME_ANCESTORS_CSP = "frame-ancestors *";
-
-function applyEmbedHeaders(response: Response): Response {
-  const headers = new Headers(response.headers);
-  headers.delete("X-Frame-Options");
-  const csp = headers.get("Content-Security-Policy");
-  if (csp && !/frame-ancestors/i.test(csp)) {
-    headers.set("Content-Security-Policy", `${csp}; ${FRAME_ANCESTORS_CSP}`);
-  } else if (!csp) {
-    headers.set("Content-Security-Policy", FRAME_ANCESTORS_CSP);
-  }
-  return new Response(response.body, {
-    status: response.status,
-    statusText: response.statusText,
-    headers,
-  });
-}
-
 async function normalizeCatastrophicSsrResponse(response: Response): Promise<Response> {
   if (response.status < 500) return response;
   const contentType = response.headers.get("content-type") ?? "";
@@ -50,12 +31,10 @@ async function normalizeCatastrophicSsrResponse(response: Response): Promise<Res
   }
 
   console.error(consumeLastCapturedError() ?? new Error(`h3 swallowed SSR error: ${body}`));
-  return applyEmbedHeaders(
-    new Response(renderErrorPage(), {
-      status: 500,
-      headers: { "content-type": "text/html; charset=utf-8" },
-    }),
-  );
+  return new Response(renderErrorPage(), {
+    status: 500,
+    headers: { "content-type": "text/html; charset=utf-8" },
+  });
 }
 
 export default {
@@ -63,15 +42,13 @@ export default {
     try {
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
-      return applyEmbedHeaders(await normalizeCatastrophicSsrResponse(response));
+      return await normalizeCatastrophicSsrResponse(response);
     } catch (error) {
       console.error(error);
-      return applyEmbedHeaders(
-        new Response(renderErrorPage(), {
-          status: 500,
-          headers: { "content-type": "text/html; charset=utf-8" },
-        }),
-      );
+      return new Response(renderErrorPage(), {
+        status: 500,
+        headers: { "content-type": "text/html; charset=utf-8" },
+      });
     }
   },
 };
